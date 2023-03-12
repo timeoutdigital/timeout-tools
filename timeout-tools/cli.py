@@ -34,12 +34,55 @@ def main():
         '--app',
         required=False
     )
+    parser_python_setup.add_argument(
+        '-b',
+        '--branch',
+        required=False
+    )
+    parser_python_setup.add_argument(
+        '-p',
+        '--python-version',
+        required=False
+    )
     parser_python_setup.set_defaults(func=python_setup)
+
+    parser_python_remove = subparsers.add_parser(
+        'python-remove',
+        help='delete python environment',
+    )
+    parser_python_remove.add_argument(
+        '-a',
+        '--app',
+        required=False
+    )
+    parser_python_remove.add_argument(
+        '-b',
+        '--branch',
+        required=False
+    )
+    parser_python_remove.add_argument(
+        '-p',
+        '--python-version',
+        required=False
+    )
+    parser_python_remove.set_defaults(func=python_remove)
 
     args = parser.parse_args()
     if len(vars(args)) == 1:
         parser.print_help()
         sys.exit(0)
+
+    if 'branch' in args and not args.branch:
+        res, out = run('git rev-parse --abbrev-ref HEAD')
+        args.branch = out.rstrip()
+    if 'app' in args and not args.app:
+        res, out = run('git config --get remote.origin.url')
+        args.app = out.split('/')[1].split('.')[0]
+
+    if 'python_version' in args and not args.python_version:
+        with open('PYTHON_VERSION', 'r') as pv:
+            args.python_version = pv.read().rstrip()
+
     args.func(args)
 
 
@@ -76,22 +119,25 @@ def pyenv_install(args):
             bashrc.write('export PATH="$HOME/.pyenv/bin:$PATH"\n')
             bashrc.write('eval "$(pyenv init --path)"\n')
             bashrc.write('eval "$(pyenv virtualenv-init -)"\n')
+        run(f'. {home_directory}/.bashrc')
 
 
 def python_setup(args):
-    res, out = run('git rev-parse --abbrev-ref HEAD')
-    branch = out.rstrip()
-    res, out = run('git config --get remote.origin.url')
-    repo_name = out.split('/')[1].split('.')[0]
-    pyenv_name = f'{repo_name}-{branch}'
-    with open('PYTHON_VERSION', 'r') as pv:
-        python_version = pv.read().rstrip()
-
-    run(f'pyenv install -s {python_version}')
-    run(f'pyenv virtualenv {python_version} {pyenv_name}')
+    pyenv_name = f'{args.app}-{args.branch}'
+    run(f'pyenv install -s {args.python_version}')
+    run(f'pyenv virtualenv {args.python_version} {pyenv_name}')
     run(f'echo {pyenv_name} > .python-version')
-    run(f'pip install -U pip')
-    run(f'pip install -r requirements.txt')
+    run(f'eval "$(pyenv init -)" && \
+            pyenv activate {pyenv_name} && \
+            pip install -U pip && \
+            pip install -r requirements.txt && \
+            pre-commit install')
+
+
+def python_remove(args):
+    pyenv_name = f'{args.app}-{args.branch}'
+    run('rm .python-version')
+    run(f'pyenv virtualenv-delete -f {pyenv_name}')
 
 
 if __name__ == '__main__':
