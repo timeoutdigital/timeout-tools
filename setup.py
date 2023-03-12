@@ -12,7 +12,7 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-            'timeout-tools = timeout-tools.cli:main'
+            'timeout-tools = timeout_tools.cli:main'
         ]
     },
 )
