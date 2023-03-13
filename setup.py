@@ -6,7 +6,7 @@ setup(
     description='Tools for devs',
     author='Keith Harvey',
     author_email='sysadmin@timeout.com',
-    packages=['timeout-tools'],
+    packages=['timeout_tools'],
     install_requires=[
         'argparse',
     ],
