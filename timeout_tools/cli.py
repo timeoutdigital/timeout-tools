@@ -67,6 +67,23 @@ def main():
     )
     parser_python_remove.set_defaults(func=python_remove)
 
+    parser_ws = subparsers.add_parser(
+        'ws',
+        help='create ws',
+    )
+    parser_ws.add_argument(
+        'app',
+    )
+    parser_ws.add_argument(
+        'ticket',
+    )
+    parser_ws.add_argument(
+        '-p',
+        '--python-version',
+        required=False
+    )
+    parser_ws.set_defaults(func=ws)
+
     args = parser.parse_args()
     if len(vars(args)) == 1:
         parser.print_help()
@@ -78,10 +95,6 @@ def main():
     if 'app' in args and not args.app:
         res, out = run('git config --get remote.origin.url')
         args.app = out.split('/')[1].split('.')[0]
-
-    if 'python_version' in args and not args.python_version:
-        with open('PYTHON_VERSION', 'r') as pv:
-            args.python_version = pv.read().rstrip()
 
     args.func(args)
 
@@ -122,10 +135,18 @@ def pyenv_install(args):
         run(f'. {home_directory}/.bashrc')
 
 
-def python_setup(args):
-    pyenv_name = f'{args.app}-{args.branch}'
-    run(f'pyenv install -s {args.python_version}')
-    run(f'pyenv virtualenv {args.python_version} {pyenv_name}')
+def python_setup_func(args):
+    if not args.python_version:
+        args.python_version = load_python_version()
+    python_setup(args.app, args.branch, args.python_version)
+
+
+def python_setup(app, branch, python_version, ws=None):
+    if ws:
+        os.chdir(ws)
+    pyenv_name = f'{app}-{branch}'
+    run(f'pyenv install -s {python_version}')
+    run(f'pyenv virtualenv {python_version} {pyenv_name}')
     run(f'echo {pyenv_name} > .python-version')
     run(f'eval "$(pyenv init -)" && \
             pyenv activate {pyenv_name} && \
@@ -138,6 +159,28 @@ def python_remove(args):
     pyenv_name = f'{args.app}-{args.branch}'
     run('rm .python-version')
     run(f'pyenv virtualenv-delete -f {pyenv_name}')
+
+
+def ws(args):
+    ws = f'{args.ticket}--{args.app}'
+    ret, out = run(f'git clone git@github.com:timeoutdigital/{args.app}.git {ws} && \
+        cd {ws} && \
+        git checkout -b {args.ticket}')
+    if ret != 0:
+        sys.exit(1)
+
+    py_ver = load_python_version()
+    if py_ver:
+        python_setup(args.app, args.ticket, py_ver, ws=f'{args.ticket}--{args.app}')
+
+
+def load_python_version():
+    try:
+        with open('PYTHON_VERSION', 'r') as pv:
+            return pv.read().rstrip()
+    except FileNotFoundError:
+        print('"PYTHON_VERSION" file not found')
+        return False
 
 
 if __name__ == '__main__':
