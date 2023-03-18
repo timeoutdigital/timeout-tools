@@ -175,6 +175,7 @@ def ws(args):
 
 
 def load_python_version(ws=None):
+    run('ls && pwd')
     if ws:
         os.chdir(ws)
     try:
