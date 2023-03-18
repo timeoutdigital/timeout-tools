@@ -141,9 +141,7 @@ def python_setup_func(args):
     python_setup(args.app, args.branch, args.python_version)
 
 
-def python_setup(app, branch, python_version, ws=None):
-    if ws:
-        os.chdir(ws)
+def python_setup(app, branch, python_version):
     pyenv_name = f'{app}-{branch}'
     run(f'pyenv install -s {python_version}')
     run(f'pyenv virtualenv {python_version} {pyenv_name}')
@@ -171,11 +169,10 @@ def ws(args):
 
     py_ver = load_python_version(ws)
     if py_ver:
-        python_setup(args.app, args.ticket, py_ver, ws=f'{args.ticket}--{args.app}')
+        python_setup(args.app, args.ticket, py_ver)
 
 
 def load_python_version(ws=None):
-    print(run('ls && pwd'))
     if ws:
         os.chdir(ws)
     try:
