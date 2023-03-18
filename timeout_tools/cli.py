@@ -1,4 +1,5 @@
 import argparse
+import logging
 import os
 import platform
 import subprocess
@@ -96,18 +97,20 @@ def main():
         res, out = run('git config --get remote.origin.url')
         args.app = out.split('/')[1].split('.')[0]
 
+    if args.debug:
+        logging.basicConfig(level=logging.DEBUG)
+
     args.func(args)
 
 
 def run(cmd):
-    print(f'RUNNING: "{cmd}"')
+    logging.debug(f'RUNNING: "{cmd}"')
     res = subprocess.run(
         cmd,
         capture_output=True,
         shell=True,
     )
-    if res.stderr:
-        print(res.stderr.decode())
+    logging.debug(res)
 
     return (res.returncode, res.stdout.decode())
 
@@ -116,7 +119,7 @@ def pyenv_install(args):
     home_directory = os.path.expanduser('~')
     ret, out = run(f'ls -d {home_directory}/.pyenv')
     if ret == 0:
-        print("$HOME/.pyenv already exists")
+        logging.debug("$HOME/.pyenv already exists")
         sys.exit(1)
     if platform.system() == 'Linux':
         ret, out = run('curl -s https://pyenv.run | bash')
@@ -125,7 +128,7 @@ def pyenv_install(args):
     if ret == 0:
         ret, out = run(f'grep "TIMEOUT-TOOLS PYENV" {home_directory}/.bashrc')
         if ret == 0:
-            print("pyenv already configured in .bashrc\n")
+            logging.debug("pyenv already configured in .bashrc\n")
             sys.exit(1)
         with open(f'{home_directory}/.bashrc', 'a') as bashrc:
             bashrc.write('\n## TIMEOUT-TOOLS PYENV\n')
@@ -142,15 +145,20 @@ def python_setup_func(args):
 
 
 def python_setup(app, branch, python_version):
+    print(f'- setting up python environment {python_version}', end='', flush=True)
     pyenv_name = f'{app}-{branch}'
     run(f'pyenv install -s {python_version}')
     run(f'pyenv virtualenv {python_version} {pyenv_name}')
     run(f'echo {pyenv_name} > .python-version')
-    run(f'eval "$(pyenv init -)" && \
-            pyenv activate {pyenv_name} && \
-            pip install -U pip && \
-            pip install -r requirements.txt && \
-            pre-commit install')
+    ret, out = run(f'eval "$(pyenv init -)" && \
+                        pyenv activate {pyenv_name} && \
+                        pip install -U pip && \
+                        pip install -r requirements.txt && \
+                        pre-commit install')
+    if ret != 0:
+        print(' ❌')
+        sys.exit(1)
+    print(' ✅')
 
 
 def python_remove(args):
@@ -160,16 +168,25 @@ def python_remove(args):
 
 
 def ws(args):
+    print(f'- cloning {args.app}', end='', flush=True)
     ws = f'{args.ticket}--{args.app}'
-    ret, out = run(f'git clone git@github.com:timeoutdigital/{args.app}.git {ws} && \
-        cd {ws} && \
-        git checkout -b {args.ticket}')
+    ret, out = run(f'git clone git@github.com:timeoutdigital/{args.app}.git {ws}')
     if ret != 0:
+        print(' ❌')
         sys.exit(1)
+    print(' ✅')
+    print(f'- creating branch {args.ticket}', end='', flush=True)
+    ret, out = run(f'cd {ws} git checkout -b {args.ticket}')
+    if ret != 0:
+        print(' ❌')
+        sys.exit(1)
+    print(' ✅')
 
     py_ver = load_python_version(ws)
     if py_ver:
         python_setup(args.app, args.ticket, py_ver)
+
+    print(f'Complete, you can now `cd {ws}`\n')
 
 
 def load_python_version(ws=None):
@@ -179,7 +196,7 @@ def load_python_version(ws=None):
         with open('PYTHON_VERSION', 'r') as pv:
             return pv.read().rstrip()
     except FileNotFoundError:
-        print('"PYTHON_VERSION" file not found')
+        logging.debug('"PYTHON_VERSION" file not found')
         return False
 
 
