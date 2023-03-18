@@ -169,12 +169,14 @@ def ws(args):
     if ret != 0:
         sys.exit(1)
 
-    py_ver = load_python_version()
+    py_ver = load_python_version(ws)
     if py_ver:
         python_setup(args.app, args.ticket, py_ver, ws=f'{args.ticket}--{args.app}')
 
 
-def load_python_version():
+def load_python_version(ws=None):
+    if ws:
+        os.chdir(ws)
     try:
         with open('PYTHON_VERSION', 'r') as pv:
             return pv.read().rstrip()
