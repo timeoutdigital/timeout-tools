@@ -112,7 +112,10 @@ def run(cmd):
     )
     logging.debug(res)
 
-    return (res.returncode, res.stdout.decode())
+    if res.returncode == 0:
+        return (res.returncode, res.stdout.decode())
+    else:
+        return (res.returncode, res.stderr.decode())
 
 
 def pyenv_install(args):
@@ -131,10 +134,12 @@ def pyenv_install(args):
             logging.debug("pyenv already configured in .bashrc\n")
             sys.exit(1)
         with open(f'{home_directory}/.bashrc', 'a') as bashrc:
-            bashrc.write('\n## TIMEOUT-TOOLS PYENV\n')
+            bashrc.write('\n## TIMEOUT-TOOLS START\n')
+            bashrc.write('export PYENV_VIRTUALENV_DISABLE_PROMPT=1')
             bashrc.write('export PATH="$HOME/.pyenv/bin:$PATH"\n')
             bashrc.write('eval "$(pyenv init --path)"\n')
             bashrc.write('eval "$(pyenv virtualenv-init -)"\n')
+            bashrc.write('\n## TIMEOUT-TOOLS END\n')
         run(f'. {home_directory}/.bashrc')
 
 
@@ -145,7 +150,7 @@ def python_setup_func(args):
 
 
 def python_setup(app, branch, python_version):
-    print(f'- setting up python environment {python_version}', end='', flush=True)
+    print(f'- Setting up python environment {python_version}', end='', flush=True)
     pyenv_name = f'{app}-{branch}'
     run(f'pyenv install -s {python_version}')
     run(f'pyenv virtualenv {python_version} {pyenv_name}')
@@ -168,14 +173,15 @@ def python_remove(args):
 
 
 def ws(args):
-    print(f'- cloning {args.app}', end='', flush=True)
     ws = f'{args.ticket}--{args.app}'
+    print(f'- Cloning {args.app} into {ws}', end='', flush=True)
     ret, out = run(f'git clone git@github.com:timeoutdigital/{args.app}.git {ws}')
     if ret != 0:
         print(' ❌')
+        print(out)
         sys.exit(1)
     print(' ✅')
-    print(f'- creating branch {args.ticket}', end='', flush=True)
+    print(f'- Creating branch {args.ticket}', end='', flush=True)
     ret, out = run(f'cd {ws} git checkout -b {args.ticket}')
     if ret != 0:
         print(' ❌')
