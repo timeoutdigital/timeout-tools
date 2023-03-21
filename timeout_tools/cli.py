@@ -124,23 +124,29 @@ def pyenv_install(args):
     if ret == 0:
         logging.debug("$HOME/.pyenv already exists")
         sys.exit(1)
+    shell_rc = '.bashrc'
     if platform.system() == 'Linux':
         ret, out = run('curl -s https://pyenv.run | bash')
-    elif platform.system() == 'macOS':
-        ret, out = run('brew install pyenv && brew install pyenv-virtualenv')
+    elif platform.system() == 'Darwin':
+        shell_rc = '.zshrc'
+        ret, out = run('brew install pyenv')
+        ret, out = run('brew install pyenv-virtualenv')
+    else:
+        print(f'{platform.system()} unknown system')
+        sys.exit(1)
     if ret == 0:
-        ret, out = run(f'grep "TIMEOUT-TOOLS PYENV" {home_directory}/.bashrc')
+        ret, out = run(f'grep "TIMEOUT-TOOLS START" {home_directory}/{shell_rc}')
         if ret == 0:
             logging.debug("pyenv already configured in .bashrc\n")
             sys.exit(1)
-        with open(f'{home_directory}/.bashrc', 'a') as bashrc:
-            bashrc.write('\n## TIMEOUT-TOOLS START\n')
-            bashrc.write('export PYENV_VIRTUALENV_DISABLE_PROMPT=1')
-            bashrc.write('export PATH="$HOME/.pyenv/bin:$PATH"\n')
-            bashrc.write('eval "$(pyenv init --path)"\n')
-            bashrc.write('eval "$(pyenv virtualenv-init -)"\n')
-            bashrc.write('\n## TIMEOUT-TOOLS END\n')
-        run(f'. {home_directory}/.bashrc')
+        with open(f'{home_directory}/{shell_rc}', 'a') as shellrc:
+            shellec.write('\n## TIMEOUT-TOOLS START\n')
+            shellec.write('export PYENV_VIRTUALENV_DISABLE_PROMPT=1')
+            shellec.write('export PATH="$HOME/.pyenv/bin:$PATH"\n')
+            shellec.write('eval "$(pyenv init --path)"\n')
+            shellec.write('eval "$(pyenv virtualenv-init -)"\n')
+            shellec.write('\n## TIMEOUT-TOOLS END\n')
+        run(f'. {home_directory}/{shell_rc}')
 
 
 def python_setup_func(args):
