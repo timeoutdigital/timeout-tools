@@ -140,12 +140,12 @@ def pyenv_install(args):
             logging.debug("pyenv already configured in .bashrc\n")
             sys.exit(1)
         with open(f'{home_directory}/{shell_rc}', 'a') as shellrc:
-            shellec.write('\n## TIMEOUT-TOOLS START\n')
-            shellec.write('export PYENV_VIRTUALENV_DISABLE_PROMPT=1')
-            shellec.write('export PATH="$HOME/.pyenv/bin:$PATH"\n')
-            shellec.write('eval "$(pyenv init --path)"\n')
-            shellec.write('eval "$(pyenv virtualenv-init -)"\n')
-            shellec.write('\n## TIMEOUT-TOOLS END\n')
+            shellrc.write('\n## TIMEOUT-TOOLS START\n')
+            shellrc.write('export PYENV_VIRTUALENV_DISABLE_PROMPT=1')
+            shellrc.write('export PATH="$HOME/.pyenv/bin:$PATH"\n')
+            shellrc.write('eval "$(pyenv init --path)"\n')
+            shellrc.write('eval "$(pyenv virtualenv-init -)"\n')
+            shellrc.write('\n## TIMEOUT-TOOLS END\n')
         run(f'. {home_directory}/{shell_rc}')
 
 
