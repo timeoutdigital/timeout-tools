@@ -2,6 +2,7 @@ import argparse
 import logging
 import os
 import platform
+import re
 import subprocess
 import sys
 
@@ -95,7 +96,7 @@ def main():
         args.branch = out.rstrip()
     if 'app' in args and not args.app:
         res, out = run('git config --get remote.origin.url')
-        args.app = out.split('/')[1].split('.')[0]
+        args.app = re.match(r'.*/(\w+)', out).group(1)
 
     if args.debug:
         logging.basicConfig(level=logging.DEBUG)
@@ -129,6 +130,7 @@ def pyenv_install(args):
         ret, out = run('curl -s https://pyenv.run | bash')
     elif platform.system() == 'Darwin':
         shell_rc = '.zshrc'
+        ret, out = run('brew install pkg-config openssl@1.1 xz gdbm tcl-tk')
         ret, out = run('brew install pyenv')
         ret, out = run('brew install pyenv-virtualenv')
     else:
@@ -141,7 +143,7 @@ def pyenv_install(args):
             sys.exit(1)
         with open(f'{home_directory}/{shell_rc}', 'a') as shellrc:
             shellrc.write('\n## TIMEOUT-TOOLS START\n')
-            shellrc.write('export PYENV_VIRTUALENV_DISABLE_PROMPT=1')
+            #shellrc.write('export PYENV_VIRTUALENV_DISABLE_PROMPT=1\n')
             shellrc.write('export PATH="$HOME/.pyenv/bin:$PATH"\n')
             shellrc.write('eval "$(pyenv init --path)"\n')
             shellrc.write('eval "$(pyenv virtualenv-init -)"\n')
