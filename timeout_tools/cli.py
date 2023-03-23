@@ -159,7 +159,7 @@ def python_setup_func(args):
 
 def python_setup(app, branch, python_version):
     pyenv_name = f'{app}-{python_version}'
-    print(f'- Creating virtualenv {pyenv_name}', end='', flush=True)
+    print(f'- Creating virtualenv `{pyenv_name}`', end='', flush=True)
     run(f'pyenv install -s {python_version}')
     ret, out = run(f'pyenv virtualenv {python_version} {pyenv_name}')
     if ret != 0:
@@ -182,11 +182,19 @@ def python_setup(app, branch, python_version):
 
     print('- Installing requirements.txt', end='', flush=True)
     ret, out = run(f'{init_active} && pip install -r requirements.txt')
-    ret, out = run(f'{init_active} && pip install -r requirements-dev.txt||true')
     if ret != 0:
         print(' ❌')
         sys.exit(1)
     print(' ✅')
+
+    ret, out = run('ls requirements-dev.txt')
+    if ret == 0:
+        print('- Installing requirements-dev.txt', end='', flush=True)
+        ret, out = run(f'{init_active} && pip install -r requirements-dev.txt')
+        if ret != 0:
+            print(' ❌')
+            sys.exit(1)
+        print(' ✅')
 
     print('- Running `pre-commit install`', end='', flush=True)
     ret, out = run(f'{init_active} && pre-commit install')
@@ -204,14 +212,14 @@ def python_remove(args):
 
 def ws(args):
     ws = f'{args.ticket}--{args.app}'
-    print(f'- Cloning {args.app} into {ws}', end='', flush=True)
+    print(f'- Cloning `{args.app}` into `{ws}`', end='', flush=True)
     ret, out = run(f'git clone git@github.com:timeoutdigital/{args.app}.git {ws}')
     if ret != 0:
         print(' ❌')
         print(out)
         sys.exit(1)
     print(' ✅')
-    print(f'- Creating branch {args.ticket}', end='', flush=True)
+    print(f'- Creating branch `{args.ticket}`', end='', flush=True)
     ret, out = run(f'cd {ws} && git checkout -b {args.ticket}')
     if ret != 0:
         print(' ❌')
