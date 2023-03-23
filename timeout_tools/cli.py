@@ -168,7 +168,8 @@ def python_setup(app, branch, python_version):
         else:
             print(' ❌')
             sys.exit(1)
-    print(' ✅')
+    else:
+        print(' ✅')
     run(f'echo {pyenv_name} > .python-version')
 
     init_active = f'eval "$(pyenv init -)" && pyenv activate {pyenv_name}'
