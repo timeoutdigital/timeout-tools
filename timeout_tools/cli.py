@@ -46,7 +46,7 @@ def main():
         '--python-version',
         required=False
     )
-    parser_python_setup.set_defaults(func=python_setup)
+    parser_python_setup.set_defaults(func=python_setup_func)
 
     parser_python_remove = subparsers.add_parser(
         'python-remove',
@@ -96,7 +96,7 @@ def main():
         args.branch = out.rstrip()
     if 'app' in args and not args.app:
         res, out = run('git config --get remote.origin.url')
-        args.app = re.match(r'.*/(\w+)', out).group(1)
+        args.app = re.match(r'.*/([\w|-]+)', out).group(1)
 
     if args.debug:
         logging.basicConfig(level=logging.DEBUG)
@@ -143,7 +143,7 @@ def pyenv_install(args):
             sys.exit(1)
         with open(f'{home_directory}/{shell_rc}', 'a') as shellrc:
             shellrc.write('\n## TIMEOUT-TOOLS START\n')
-            #shellrc.write('export PYENV_VIRTUALENV_DISABLE_PROMPT=1\n')
+            #  shellrc.write('export PYENV_VIRTUALENV_DISABLE_PROMPT=1\n')
             shellrc.write('export PATH="$HOME/.pyenv/bin:$PATH"\n')
             shellrc.write('eval "$(pyenv init --path)"\n')
             shellrc.write('eval "$(pyenv virtualenv-init -)"\n')
@@ -159,7 +159,7 @@ def python_setup_func(args):
 
 def python_setup(app, branch, python_version):
     print(f'- Setting up python environment {python_version}', end='', flush=True)
-    pyenv_name = f'{app}-{branch}'
+    pyenv_name = f'{app}-{python_version}'
     run(f'pyenv install -s {python_version}')
     run(f'pyenv virtualenv {python_version} {pyenv_name}')
     run(f'echo {pyenv_name} > .python-version')
@@ -167,6 +167,7 @@ def python_setup(app, branch, python_version):
                         pyenv activate {pyenv_name} && \
                         pip install -U pip && \
                         pip install -r requirements.txt && \
+                        pip install -t requirements-dev.txt || true && \
                         pre-commit install')
     if ret != 0:
         print(' ❌')
