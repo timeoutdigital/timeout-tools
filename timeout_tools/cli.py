@@ -167,6 +167,7 @@ def python_setup(app, branch, python_version):
             print(' (already exists) ✅')
         else:
             print(' ❌')
+            print(out)
             sys.exit(1)
     else:
         print(' ✅')
@@ -177,6 +178,7 @@ def python_setup(app, branch, python_version):
     ret, out = run(f'{init_active} && pip install -U pip')
     if ret != 0:
         print(' ❌')
+        print(out)
         sys.exit(1)
     print(' ✅')
 
@@ -184,6 +186,7 @@ def python_setup(app, branch, python_version):
     ret, out = run(f'{init_active} && pip install -r requirements.txt')
     if ret != 0:
         print(' ❌')
+        print(out)
         sys.exit(1)
     print(' ✅')
 
@@ -193,6 +196,7 @@ def python_setup(app, branch, python_version):
         ret, out = run(f'{init_active} && pip install -r requirements-dev.txt')
         if ret != 0:
             print(' ❌')
+            print(out)
             sys.exit(1)
         print(' ✅')
 
@@ -200,6 +204,7 @@ def python_setup(app, branch, python_version):
     ret, out = run(f'{init_active} && pre-commit install')
     if ret != 0:
         print(' ❌')
+        print(out)
         sys.exit(1)
     print(' ✅')
 
@@ -223,6 +228,7 @@ def ws(args):
     ret, out = run(f'cd {ws} && git checkout -b {args.ticket}')
     if ret != 0:
         print(' ❌')
+        print(out)
         sys.exit(1)
     print(' ✅')
 
