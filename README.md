@@ -7,10 +7,16 @@ Tools for developers
 Installation
 ------------
 
-Use pip to install globally
+Requires recent pip
 
 ```
-$ sudo pip install git+https://github.com/timeoutdigital/timeout-tools
+sudo pip3 install -U pip
+```
+
+Install globally so its always avalible
+
+```
+sudo pip3 install git+https://github.com/timeoutdigital/timeout-tools
 ```
 
 Usage
@@ -19,9 +25,9 @@ Usage
 - Create a workspace
 
 ```
-$ timeout-tools ws <app_repo_name> <new_branch_name>
+timeout-tools ws <app_repo_name> <new_branch_name>
 eg
-$ timeout-tools ws envars TOPS-1234
+timeout-tools ws envars TOPS-1234
 ```
 
 This:
