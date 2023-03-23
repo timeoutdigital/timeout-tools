@@ -1,7 +1,7 @@
 [project]
 name = "timeout-tools"
 description = "Time Out Dev Tools"
-version = "0.3.0"
+version = "0.4.0"
 authors = [
     { name = "Keith Harvey", email = "keith.harvey@timeout.com" }
 ]

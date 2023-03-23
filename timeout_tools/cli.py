@@ -158,17 +158,37 @@ def python_setup_func(args):
 
 
 def python_setup(app, branch, python_version):
-    print(f'- Setting up python environment {python_version}', end='', flush=True)
+    print(f'- Creating virtualenv {python_version}', end='', flush=True)
     pyenv_name = f'{app}-{python_version}'
     run(f'pyenv install -s {python_version}')
-    run(f'pyenv virtualenv {python_version} {pyenv_name}')
+    ret, out = run(f'pyenv virtualenv {python_version} {pyenv_name}')
+    if ret != 0:
+        if 'already exists' in out:
+            print(' (already exists) ✅')
+        else:
+            print(' ❌')
+            sys.exit(1)
+    print(' ✅')
     run(f'echo {pyenv_name} > .python-version')
-    ret, out = run(f'eval "$(pyenv init -)" && \
-                        pyenv activate {pyenv_name} && \
-                        pip install -U pip && \
-                        pip install -r requirements.txt && \
-                        pip install -t requirements-dev.txt || true && \
-                        pre-commit install')
+
+    init_active = f'eval "$(pyenv init -)" && pyenv activate {pyenv_name}'
+    print('- Upgrading pip', end='', flush=True)
+    ret, out = run(f'{init_active} && pip install -U pip')
+    if ret != 0:
+        print(' ❌')
+        sys.exit(1)
+    print(' ✅')
+
+    print('- Installing requirements.txt', end='', flush=True)
+    ret, out = run(f'{init_active} && pip install -r requirements.txt')
+    ret, out = run(f'{init_active} && pip install -r requirements-dev.txt||true')
+    if ret != 0:
+        print(' ❌')
+        sys.exit(1)
+    print(' ✅')
+
+    print('- Running `pre-commit install`', end='', flush=True)
+    ret, out = run(f'{init_active} && pre-commit install')
     if ret != 0:
         print(' ❌')
         sys.exit(1)
@@ -191,7 +211,7 @@ def ws(args):
         sys.exit(1)
     print(' ✅')
     print(f'- Creating branch {args.ticket}', end='', flush=True)
-    ret, out = run(f'cd {ws} git checkout -b {args.ticket}')
+    ret, out = run(f'cd {ws} && git checkout -b {args.ticket}')
     if ret != 0:
         print(' ❌')
         sys.exit(1)
