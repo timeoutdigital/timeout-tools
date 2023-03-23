@@ -158,8 +158,8 @@ def python_setup_func(args):
 
 
 def python_setup(app, branch, python_version):
-    print(f'- Creating virtualenv {python_version}', end='', flush=True)
     pyenv_name = f'{app}-{python_version}'
+    print(f'- Creating virtualenv {pyenv_name}', end='', flush=True)
     run(f'pyenv install -s {python_version}')
     ret, out = run(f'pyenv virtualenv {python_version} {pyenv_name}')
     if ret != 0:
