@@ -217,6 +217,7 @@ def python_remove(args):
 
 def ws(args):
     ws = f'{args.ticket}--{args.app}'
+
     print(f'- Cloning `{args.app}` into `{ws}`', end='', flush=True)
     ret, out = run(f'git clone git@github.com:timeoutdigital/{args.app}.git {ws}')
     if ret != 0:
@@ -224,13 +225,18 @@ def ws(args):
         print(out)
         sys.exit(1)
     print(' ✅')
-    print(f'- Creating branch `{args.ticket}`', end='', flush=True)
-    ret, out = run(f'cd {ws} && git checkout -b {args.ticket}')
-    if ret != 0:
-        print(' ❌')
-        print(out)
-        sys.exit(1)
-    print(' ✅')
+
+    print(f'- Branch `{args.ticket}`', end='', flush=True)
+    ret, out = run(f'cd {ws} && git checkout {args.ticket}')
+    if ret == 0:
+        print(' checked out ✅')
+    else:
+        ret, out = run(f'cd {ws} && git checkout -b {args.ticket}')
+        if ret != 0:
+            print(' failed ❌')
+            print(out)
+            sys.exit(1)
+        print('created ✅')
 
     py_ver = load_python_version(ws)
     if py_ver:
