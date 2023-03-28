@@ -210,7 +210,11 @@ def python_setup(app, branch, python_version):
 
 
 def python_remove(args):
-    pyenv_name = f'{args.app}-{args.branch}'
+    ret, out = run('cat .python-version')
+    if ret != 0:
+        print(out)
+        sys.exit(1)
+    pyenv_name = out
 
     print('- deleting `.python-version`', end='', flush=True)
     ret, out = run('rm .python-version')
