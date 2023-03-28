@@ -214,7 +214,7 @@ def python_remove(args):
     if ret != 0:
         print(out)
         sys.exit(1)
-    pyenv_name = out
+    pyenv_name = out.rstrip()
 
     print('- deleting `.python-version`', end='', flush=True)
     ret, out = run('rm .python-version')
