@@ -220,7 +220,7 @@ def python_remove(args):
         sys.exit(1)
     print(' ✅')
 
-    print('- deleting `{pyenv_name}` virtualenv', end='', flush=True)
+    print(f'- deleting `{pyenv_name}` virtualenv', end='', flush=True)
     ret, out = run(f'pyenv virtualenv-delete -f {pyenv_name}')
     if ret != 0:
         print(' ❌')
