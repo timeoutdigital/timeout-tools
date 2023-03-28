@@ -211,8 +211,22 @@ def python_setup(app, branch, python_version):
 
 def python_remove(args):
     pyenv_name = f'{args.app}-{args.branch}'
-    run('rm .python-version')
-    run(f'pyenv virtualenv-delete -f {pyenv_name}')
+
+    print('- deleting `.python-version`', end='', flush=True)
+    ret, out = run('rm .python-version')
+    if ret != 0:
+        print(' ❌')
+        print(out)
+        sys.exit(1)
+    print(' ✅')
+
+    print('- deleting `{pyenv_name}` virtualenv', end='', flush=True)
+    ret, out = run(f'pyenv virtualenv-delete -f {pyenv_name}')
+    if ret != 0:
+        print(' ❌')
+        print(out)
+        sys.exit(1)
+    print(' ✅')
 
 
 def ws(args):
