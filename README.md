@@ -25,7 +25,7 @@ Usage
 - Create a workspace
 
 ```
-timeout-tools ws <app_repo_name> <new_branch_name>
+timeout-tools ws <app_repo_name> <branch_name>
 eg
 timeout-tools ws envars TOPS-1234
 ```
@@ -33,6 +33,7 @@ timeout-tools ws envars TOPS-1234
 This:
 
 - Clones the app into `<branch_name>--<app>`
+- Checkout branch `<branch_name>` if it exists or creates it
 - Installs python version specified in repos `PYTHON_VERSION` file, using pyenv
 - Creates a pyenv virtualenv named `<app>-<version>`
 - Installs requirements.txt (and requirements-dev.txt if it exists) in the virtualenv
