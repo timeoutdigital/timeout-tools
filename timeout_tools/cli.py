@@ -305,7 +305,7 @@ def check_python_version_installed(python_version):
     print(f'- Checking Python `{python_version}` is installed', end='', flush=True)
     (status, result) = run('pyenv versions --bare --skip-aliases')
     if status:
-        print(' failed ❌')
+        print(' ❌')
         raise PyEnvFailure({"message": "Failed to run"})
     for py_ver in result.replace(' ', '').split('\n'):
         if py_ver == python_version:
@@ -313,10 +313,10 @@ def check_python_version_installed(python_version):
             break
 
     if not py_ver_present:
-        print(' failed ❌')
+        print(' ❌')
         raise PyEnvPythonNotInstalled({"message": "python version not installed"})
     else:
-        print(' succeeded ✅')
+        print(' ✅')
 
 
 def check_python_version_available(python_version):
@@ -328,20 +328,20 @@ def check_python_version_available(python_version):
     print(f'- Python checking `{python_version}` is available for installation', end='', flush=True)
     (status, result) = run('pyenv install --list')
     if status:
-        print(' failed ❌')
+        print(' ❌')
         raise PyEnvFailure({"message": "Failed to run"})
     for py_ver in result.replace(' ', '').split('\n'):
         if py_ver == python_version:
             py_ver_available = True
             break
     if not py_ver_available:
-        print(' failed ❌')
+        print(' ❌')
         raise PyEnvFailure({"message": '''
             Please update pyenv with latest versions of python by running:
             cd ~/.pyenv/plugins/python-build/../.. && git pull && cd -
         '''})
     else:
-        print(' succeeded ✅')
+        print(' ✅')
 
 
 def install_python_version(python_version):
@@ -351,10 +351,10 @@ def install_python_version(python_version):
     print('- Python installing `{python_version}`', end='', flush=True)
     (status, _) = run(f'pyenv install {python_version}')
     if status:
-        print(' failed ❌')
+        print(' ❌')
         raise PyEnvFailure(f'Failed to install python version {python_version}')
     else:
-        print(' succeeded ✅')
+        print(' ✅')
 
 
 if __name__ == '__main__':
