@@ -289,7 +289,7 @@ def check_python_version_installed(python_version):
     py_ver_present = False
     (status, result) = run('pyenv versions --bare --skip-aliases')
     if status:
-        raise PyEnvFailure({"message": "failed to run\n"})
+        raise PyEnvFailure({"message": "Failed to run"})
     for py_ver in result.replace(' ', '').split('\n'):
         if py_ver == python_version:
             py_ver_present = True
@@ -307,7 +307,7 @@ def check_python_version_installed(python_version):
             print(e.args[0]['message'])
             sys.exit(1)
     else:
-        print(f"- Python `{python_version}` is installed ✅")
+        print(f'- Python `{python_version}` is installed ✅')
 
 
 def check_python_version_available(python_version):
@@ -318,30 +318,30 @@ def check_python_version_available(python_version):
     py_ver_available = False
     (status, result) = run('pyenv install --list')
     if status:
-        raise PyEnvFailure({"message": "failed to run\n"})
+        raise PyEnvFailure({"message": "Failed to run"})
     for py_ver in result.replace(' ', '').split('\n'):
         if py_ver == python_version:
             py_ver_available = True
             break
     if not py_ver_available:
-        print("""
+        print('''
             Please update pyenv with latest versions of python by running:
             cd ~/.pyenv/plugins/python-build/../.. && git pull && cd -
-        """)
-        raise PyEnvFailure({"message": "requires update\n"})
+        ''')
+        raise PyEnvFailure({"message": "Pyenv requires update"})
     else:
-        print(f"- Python `{python_version}` is available for installation ✅")
+        print(f'- Python `{python_version}` is available for installation ✅')
 
 
 def install_python_version(python_version):
     ###
     # Use pyenv to install new version of python
     ###
-    (status, _) = run('pyenv install {python_version}')
+    (status, _) = run(f'pyenv install {python_version}')
     if status:
-        raise BaseException("Failed to install python version")
+        raise BaseException(f'Failed to install python version {python_version}')
     else:
-        print(f"- Python `{python_version}` installation successful ✅")
+        print(f'- Python `{python_version}` installation successful ✅')
 
 
 if __name__ == '__main__':
