@@ -2,3 +2,4 @@ argparse
 invoke
 pip-tools
 pre-commit
+pytest

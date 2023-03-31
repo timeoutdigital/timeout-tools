@@ -7,6 +7,14 @@ import subprocess
 import sys
 
 
+class PyEnvFailure(Exception):
+    pass
+
+
+class PyEnvPythonNotInstalled(Exception):
+    pass
+
+
 def main():
     parser = argparse.ArgumentParser(
         description='Timeout Tools',
@@ -158,9 +166,24 @@ def python_setup_func(args):
 
 
 def python_setup(app, branch, python_version):
+    try:
+        check_python_version_installed(python_version)
+    except PyEnvFailure as e:
+        print(e.args[0]['message'])
+        sys.exit(1)
+    except PyEnvPythonNotInstalled:
+        try:
+            check_python_version_available(python_version)
+            try:
+                install_python_version(python_version)
+            except PyEnvFailure as e:
+                print(e.args[0]['message'])
+                sys.exit(1)
+        except PyEnvFailure as e:
+            print(e.args[0]['message'])
+            sys.exit(1)
     pyenv_name = f'{app}-{python_version}'
     print(f'- Creating virtualenv `{pyenv_name}`', end='', flush=True)
-    run(f'pyenv install -s {python_version}')
     ret, out = run(f'pyenv virtualenv {python_version} {pyenv_name}')
     if ret != 0:
         if 'already exists' in out:
@@ -272,6 +295,66 @@ def load_python_version(ws=None):
     except FileNotFoundError:
         logging.debug('"PYTHON_VERSION" file not found')
         return False
+
+
+def check_python_version_installed(python_version):
+    ###
+    # Check whether a version of python is already installed via pyenv
+    ###
+    py_ver_present = False
+    print(f'- Checking Python `{python_version}` is installed', end='', flush=True)
+    (status, result) = run('pyenv versions --bare --skip-aliases')
+    if status:
+        print(' ❌')
+        raise PyEnvFailure({"message": "Failed to run"})
+    for py_ver in result.replace(' ', '').split('\n'):
+        if py_ver == python_version:
+            py_ver_present = True
+            break
+
+    if not py_ver_present:
+        print(' ❌')
+        raise PyEnvPythonNotInstalled({"message": "python version not installed"})
+    else:
+        print(' ✅')
+
+
+def check_python_version_available(python_version):
+    ###
+    # Check whether a version of python is already is available for install by pyenv
+    # if not exit and tell user to update pyenv installation
+    ###
+    py_ver_available = False
+    print(f'- Python checking `{python_version}` is available for installation', end='', flush=True)
+    (status, result) = run('pyenv install --list')
+    if status:
+        print(' ❌')
+        raise PyEnvFailure({"message": "Failed to run"})
+    for py_ver in result.replace(' ', '').split('\n'):
+        if py_ver == python_version:
+            py_ver_available = True
+            break
+    if not py_ver_available:
+        print(' ❌')
+        raise PyEnvFailure({"message": '''
+            Please update pyenv with latest versions of python by running:
+            cd ~/.pyenv/plugins/python-build/../.. && git pull && cd -
+        '''})
+    else:
+        print(' ✅')
+
+
+def install_python_version(python_version):
+    ###
+    # Use pyenv to install new version of python
+    ###
+    print('- Python installing `{python_version}`', end='', flush=True)
+    (status, _) = run(f'pyenv install {python_version}')
+    if status:
+        print(' ❌')
+        raise PyEnvFailure(f'Failed to install python version {python_version}')
+    else:
+        print(' ✅')
 
 
 if __name__ == '__main__':

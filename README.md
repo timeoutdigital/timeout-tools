@@ -13,7 +13,7 @@ Requires recent pip
 sudo pip3 install -U pip
 ```
 
-Install globally so its always avalible
+Install globally so its always available
 
 ```
 sudo pip3 install git+https://github.com/timeoutdigital/timeout-tools
