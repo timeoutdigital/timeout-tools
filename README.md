@@ -19,6 +19,8 @@ Install globally so its always avalible
 sudo pip3 install git+https://github.com/timeoutdigital/timeout-tools
 ```
 
+If you're running a DA app and are having trouble with timeout-tools installing, please check [this guide](https://timeoutgroup.atlassian.net/wiki/spaces/TD/pages/3220537347/Run+a+Data+App+for+the+first+time).
+
 Usage
 -----
 
