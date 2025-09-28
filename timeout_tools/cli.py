@@ -21,11 +21,11 @@ def main():
         title="commands",
     )
 
-    parser_pyenv_install = subparsers.add_parser(
-        'pyenv-install',
-        help='install pyenv',
+    parser_uv_install = subparsers.add_parser(
+        'uv-install',
+        help='install uv',
     )
-    parser_pyenv_install.set_defaults(func=pyenv_install)
+    parser_uv_install.set_defaults(func=uv_install)
 
     parser_python_setup = subparsers.add_parser(
         'python-setup',
@@ -119,36 +119,33 @@ def run(cmd):
         return (res.returncode, res.stderr.decode())
 
 
-def pyenv_install(args):
+def uv_install(args):
     home_directory = os.path.expanduser('~')
-    ret, out = run(f'ls -d {home_directory}/.pyenv')
+    ret, out = run('which uv')
     if ret == 0:
-        logging.debug("$HOME/.pyenv already exists")
-        sys.exit(1)
-    shell_rc = '.bashrc'
+        print("UV is already installed")
+        sys.exit(0)
+    
     if platform.system() == 'Linux':
-        ret, out = run('curl -s https://pyenv.run | bash')
+        ret, out = run('curl -LsSf https://astral.sh/uv/install.sh | sh')
     elif platform.system() == 'Darwin':
-        shell_rc = '.zshrc'
-        ret, out = run('brew install pkg-config openssl@1.1 xz gdbm tcl-tk')
-        ret, out = run('brew install pyenv')
-        ret, out = run('brew install pyenv-virtualenv')
+        # try brew first
+        ret, out = run('which brew')
+        if ret == 0:
+            ret, out = run('brew install uv')
+        else:
+            ret, out = run('curl -LsSf https://astral.sh/uv/install.sh | sh')
     else:
         print(f'{platform.system()} unknown system')
         sys.exit(1)
+    
     if ret == 0:
-        ret, out = run(f'grep "TIMEOUT-TOOLS START" {home_directory}/{shell_rc}')
-        if ret == 0:
-            logging.debug("pyenv already configured in .bashrc\n")
-            sys.exit(1)
-        with open(f'{home_directory}/{shell_rc}', 'a') as shellrc:
-            shellrc.write('\n## TIMEOUT-TOOLS START\n')
-            #  shellrc.write('export PYENV_VIRTUALENV_DISABLE_PROMPT=1\n')
-            shellrc.write('export PATH="$HOME/.pyenv/bin:$PATH"\n')
-            shellrc.write('eval "$(pyenv init --path)"\n')
-            shellrc.write('eval "$(pyenv virtualenv-init -)"\n')
-            shellrc.write('\n## TIMEOUT-TOOLS END\n')
-        run(f'. {home_directory}/{shell_rc}')
+        print('UV installed successfully')
+        print('You may need to restart your shell')
+    else:
+        print('Failed to install UV')
+        print(out)
+        sys.exit(1)
 
 
 def python_setup_func(args):
@@ -158,50 +155,55 @@ def python_setup_func(args):
 
 
 def python_setup(app, branch, python_version):
-    pyenv_name = f'{app}-{python_version}'
-    print(f'- Creating virtualenv `{pyenv_name}`', end='', flush=True)
-    run(f'pyenv install -s {python_version}')
-    ret, out = run(f'pyenv virtualenv {python_version} {pyenv_name}')
-    if ret != 0:
-        if 'already exists' in out:
-            print(' (already exists) ✅')
-        else:
-            print(' ❌')
-            print(out)
-            sys.exit(1)
-    else:
-        print(' ✅')
-    run(f'echo {pyenv_name} > .python-version')
-
-    init_active = f'eval "$(pyenv init -)" && pyenv activate {pyenv_name}'
-    print('- Upgrading pip', end='', flush=True)
-    ret, out = run(f'{init_active} && pip install -U pip')
+    # install the Python version if needed
+    print(f'- Installing Python {python_version}', end='', flush=True)
+    ret, out = run(f'uv python install {python_version}')
     if ret != 0:
         print(' ❌')
         print(out)
         sys.exit(1)
     print(' ✅')
-
+    
+    print(f'- Creating virtual environment', end='', flush=True)
+    ret, out = run(f'uv venv --python {python_version}')
+    if ret != 0:
+        print(' ❌')
+        print(out)
+        sys.exit(1)
+    print(' ✅')
+    
+    # try installing requirements using uv pip sync
     print('- Installing requirements.txt', end='', flush=True)
-    ret, out = run(f'{init_active} && pip install -r requirements.txt')
+    ret, out = run('uv pip sync requirements.txt')
     if ret != 0:
         print(' ❌')
         print(out)
         sys.exit(1)
     print(' ✅')
 
+    # install the dev requirements if they exist
     ret, out = run('ls requirements-dev.txt')
     if ret == 0:
         print('- Installing requirements-dev.txt', end='', flush=True)
-        ret, out = run(f'{init_active} && pip install -r requirements-dev.txt')
+        ret, out = run('uv pip install -r requirements-dev.txt')
         if ret != 0:
             print(' ❌')
             print(out)
             sys.exit(1)
         print(' ✅')
 
+    # pre-commit
+    print('- Installing pre-commit', end='', flush=True)
+    ret, out = run('uv pip install pre-commit')
+    if ret != 0:
+        print(' ❌')
+        print(out)
+        sys.exit(1)
+    print(' ✅')
+    
+    # pre-commit install
     print('- Running `pre-commit install`', end='', flush=True)
-    ret, out = run(f'{init_active} && pre-commit install')
+    ret, out = run('uv run pre-commit install')
     if ret != 0:
         print(' ❌')
         print(out)
@@ -210,27 +212,23 @@ def python_setup(app, branch, python_version):
 
 
 def python_remove(args):
-    ret, out = run('cat .python-version')
-    if ret != 0:
-        print(out)
-        sys.exit(1)
-    pyenv_name = out.rstrip()
-
-    print('- Deleting `.python-version`', end='', flush=True)
-    ret, out = run('rm .python-version')
+    print('- Deleting `.venv` virtualenv', end='', flush=True)
+    ret, out = run('rm -rf .venv')
     if ret != 0:
         print(' ❌')
         print(out)
         sys.exit(1)
     print(' ✅')
-
-    print(f'- Deleting `{pyenv_name}` virtualenv', end='', flush=True)
-    ret, out = run(f'pyenv virtualenv-delete -f {pyenv_name}')
-    if ret != 0:
-        print(' ❌')
-        print(out)
-        sys.exit(1)
-    print(' ✅')
+    
+    ret, out = run('ls .python-version')
+    if ret == 0:
+        print('- Deleting `.python-version`', end='', flush=True)
+        ret, out = run('rm .python-version')
+        if ret != 0:
+            print(' ❌')
+            print(out)
+            sys.exit(1)
+        print(' ✅')
 
 
 def ws(args):
