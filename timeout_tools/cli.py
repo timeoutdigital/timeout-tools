@@ -1,7 +1,6 @@
 import argparse
 import logging
 import os
-import platform
 import re
 import subprocess
 import sys
@@ -20,12 +19,6 @@ def main():
     subparsers = parser.add_subparsers(
         title="commands",
     )
-
-    parser_pyenv_install = subparsers.add_parser(
-        'pyenv-install',
-        help='install pyenv',
-    )
-    parser_pyenv_install.set_defaults(func=pyenv_install)
 
     parser_python_setup = subparsers.add_parser(
         'python-setup',
@@ -119,38 +112,6 @@ def run(cmd):
         return (res.returncode, res.stderr.decode())
 
 
-def pyenv_install(args):
-    home_directory = os.path.expanduser('~')
-    ret, out = run(f'ls -d {home_directory}/.pyenv')
-    if ret == 0:
-        logging.debug("$HOME/.pyenv already exists")
-        sys.exit(1)
-    shell_rc = '.bashrc'
-    if platform.system() == 'Linux':
-        ret, out = run('curl -s https://pyenv.run | bash')
-    elif platform.system() == 'Darwin':
-        shell_rc = '.zshrc'
-        ret, out = run('brew install pkg-config openssl@1.1 xz gdbm tcl-tk')
-        ret, out = run('brew install pyenv')
-        ret, out = run('brew install pyenv-virtualenv')
-    else:
-        print(f'{platform.system()} unknown system')
-        sys.exit(1)
-    if ret == 0:
-        ret, out = run(f'grep "TIMEOUT-TOOLS START" {home_directory}/{shell_rc}')
-        if ret == 0:
-            logging.debug("pyenv already configured in .bashrc\n")
-            sys.exit(1)
-        with open(f'{home_directory}/{shell_rc}', 'a') as shellrc:
-            shellrc.write('\n## TIMEOUT-TOOLS START\n')
-            #  shellrc.write('export PYENV_VIRTUALENV_DISABLE_PROMPT=1\n')
-            shellrc.write('export PATH="$HOME/.pyenv/bin:$PATH"\n')
-            shellrc.write('eval "$(pyenv init --path)"\n')
-            shellrc.write('eval "$(pyenv virtualenv-init -)"\n')
-            shellrc.write('\n## TIMEOUT-TOOLS END\n')
-        run(f'. {home_directory}/{shell_rc}')
-
-
 def python_setup_func(args):
     if not args.python_version:
         args.python_version = load_python_version()
@@ -158,55 +119,54 @@ def python_setup_func(args):
 
 
 def python_setup(app, branch, python_version):
-    pyenv_name = f'{app}-{python_version}'
-    print(f'- Creating virtualenv `{pyenv_name}`', end='', flush=True)
-    run(f'pyenv install -s {python_version}')
-    ret, out = run(f'pyenv virtualenv {python_version} {pyenv_name}')
+    if os.path.exists('PYTHON_VERSION'):
+        req_python_setup(app, branch, python_version)
+    else:
+        pypro_python_setup(app, branch, python_version)
+
+    print('- Running `pre-commit install`', end='', flush=True)
+    ret, out = run('pre-commit install')
     if ret != 0:
-        if 'already exists' in out:
-            print(' (already exists) ✅')
-        else:
-            print(' ❌')
-            print(out)
-            sys.exit(1)
+        print(' ❌')
+        print(out)
+        sys.exit(1)
     else:
         print(' ✅')
-    run(f'echo {pyenv_name} > .python-version')
 
-    init_active = f'eval "$(pyenv init -)" && pyenv activate {pyenv_name}'
-    print('- Upgrading pip', end='', flush=True)
-    ret, out = run(f'{init_active} && pip install -U pip')
+
+def req_python_setup(app, branch, python_version):
+    print('- Creating venv', end='', flush=True)
+    ret, out = run('uv venv --clear')
     if ret != 0:
         print(' ❌')
         print(out)
         sys.exit(1)
-    print(' ✅')
+    else:
+        print(' ✅')
 
     print('- Installing requirements.txt', end='', flush=True)
-    ret, out = run(f'{init_active} && pip install -r requirements.txt')
+    ret, out = run('uv pip install -r requirements.txt')
     if ret != 0:
         print(' ❌')
         print(out)
         sys.exit(1)
-    print(' ✅')
+    else:
+        print(' ✅')
 
     ret, out = run('ls requirements-dev.txt')
     if ret == 0:
         print('- Installing requirements-dev.txt', end='', flush=True)
-        ret, out = run(f'{init_active} && pip install -r requirements-dev.txt')
+        ret, out = run('uv pip install -r requirements-dev.txt')
         if ret != 0:
             print(' ❌')
             print(out)
             sys.exit(1)
-        print(' ✅')
+        else:
+            print(' ✅')
 
-    print('- Running `pre-commit install`', end='', flush=True)
-    ret, out = run(f'{init_active} && pre-commit install')
-    if ret != 0:
-        print(' ❌')
-        print(out)
-        sys.exit(1)
-    print(' ✅')
+
+def pypro_python_setup(app, branch, python_version):
+    pass
 
 
 def python_remove(args):
@@ -270,8 +230,13 @@ def load_python_version(ws=None):
         with open('PYTHON_VERSION', 'r') as pv:
             return pv.read().rstrip()
     except FileNotFoundError:
-        logging.debug('"PYTHON_VERSION" file not found')
-        return False
+        logging.debug('"PYTHON_VERSION" file not found, trying ".python-version"')
+        try:
+            with open('.python-version', 'r') as pv:
+                return pv.read().rstrip()
+        except FileNotFoundError:
+            logging.debug('".python-version" file not found')
+            return False
 
 
 if __name__ == '__main__':
