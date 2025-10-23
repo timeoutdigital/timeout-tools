@@ -136,7 +136,7 @@ def python_setup(app, branch, python_version):
 
 def req_python_setup(app, branch, python_version):
     print('- Creating venv', end='', flush=True)
-    ret, out = run('uv venv --clear')
+    ret, out = run(f'uv venv --python {python_version} --clear')
     if ret != 0:
         print(' ❌')
         print(out)
