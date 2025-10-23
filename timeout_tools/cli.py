@@ -201,7 +201,14 @@ def req_python_setup(app, branch, python_version):
 
 
 def pypro_python_setup(app, branch, python_version):
-    pass
+    print('- uv sync', end='', flush=True)
+    ret, out = run('uv sync')
+    if ret != 0:
+        print(' ❌')
+        print(out)
+        sys.exit(1)
+    else:
+        print(' ✅')
 
 
 def python_remove(args):
