@@ -1,6 +1,7 @@
 import argparse
 import logging
 import os
+import platform
 import re
 import subprocess
 import sys
@@ -19,6 +20,12 @@ def main():
     subparsers = parser.add_subparsers(
         title="commands",
     )
+
+    parser_uv_install = subparsers.add_parser(
+        'uv-install',
+        help='install uv',
+    )
+    parser_uv_install.set_defaults(func=uv_install)
 
     parser_python_setup = subparsers.add_parser(
         'python-setup',
@@ -110,6 +117,34 @@ def run(cmd):
         return (res.returncode, res.stdout.decode())
     else:
         return (res.returncode, res.stderr.decode())
+
+
+def uv_install(args):
+    ret, out = run('which uv')
+    if ret == 0:
+        print("UV is already installed")
+        sys.exit(0)
+
+    if platform.system() == 'Linux':
+        ret, out = run('curl -LsSf https://astral.sh/uv/install.sh | sh')
+    elif platform.system() == 'Darwin':
+        # try brew first
+        ret, out = run('which brew')
+        if ret == 0:
+            ret, out = run('brew install uv')
+        else:
+            ret, out = run('curl -LsSf https://astral.sh/uv/install.sh | sh')
+    else:
+        print(f'{platform.system()} unknown system')
+        sys.exit(1)
+
+    if ret == 0:
+        print('UV installed successfully')
+        print('You may need to restart your shell')
+    else:
+        print('Failed to install UV')
+        print(out)
+        sys.exit(1)
 
 
 def python_setup_func(args):
@@ -228,12 +263,20 @@ def load_python_version(ws=None):
         os.chdir(ws)
     try:
         with open('PYTHON_VERSION', 'r') as pv:
-            return pv.read().rstrip()
+            version = pv.read().rstrip()
+            match = re.match(r'(\d+\.\d+)', version)
+            if match:
+                return match.group(1)
+            return version
     except FileNotFoundError:
         logging.debug('"PYTHON_VERSION" file not found, trying ".python-version"')
         try:
             with open('.python-version', 'r') as pv:
-                return pv.read().rstrip()
+                version = pv.read().rstrip()
+                match = re.match(r'(\d+\.\d+)', version)
+                if match:
+                    return match.group(1)
+                return version
         except FileNotFoundError:
             logging.debug('".python-version" file not found')
             return False
