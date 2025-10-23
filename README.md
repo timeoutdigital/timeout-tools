@@ -7,13 +7,11 @@ Tools for developers
 Installation
 ------------
 
-Requires recent pip
-
 ```
-sudo pip3 install -U pip
+uv tool install git+https://github.com/timeoutdigital/timeout-tools
 ```
 
-Install globally so its always avalible
+or
 
 ```
 sudo pip3 install git+https://github.com/timeoutdigital/timeout-tools
@@ -36,8 +34,5 @@ This:
 
 - Clones the app into `<branch_name>--<app>`
 - Checkout branch `<branch_name>` if it exists or creates it
-- Installs python version specified in repos `PYTHON_VERSION` file, using pyenv
-- Creates a pyenv virtualenv named `<app>-<version>`
-- Installs requirements.txt (and requirements-dev.txt if it exists) in the virtualenv
-- Creates `.python-version` file for pyenv-virtualenv to read
+- Sets up python using uv pip for `PYTHON_VERSION` or uv sync for `.python-version`
 - Runs `pre-commit install`
