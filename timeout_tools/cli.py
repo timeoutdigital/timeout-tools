@@ -160,7 +160,7 @@ def python_setup(app, branch, python_version):
         pypro_python_setup(app, branch, python_version)
 
     print('- Running `pre-commit install`', end='', flush=True)
-    ret, out = run('pre-commit install')
+    ret, out = run('uv run pre-commit install')
     if ret != 0:
         print(' ❌')
         print(out)
