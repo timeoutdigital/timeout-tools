@@ -11,3 +11,8 @@ dependencies = [
 
 [project.scripts]
 timeout-tools =  "timeout_tools.cli:main"
+
+[dependency-groups]
+dev = [
+    "pre-commit>=4.3.0",
+]
